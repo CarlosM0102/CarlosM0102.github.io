@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idioma Express: Desafío Multilingüe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: #333;
+        }
+        #game-container {
+            margin: 20px auto;
+            width: 80%;
+            max-width: 600px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #question {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        .options button {
+            padding: 10px 20px;
+            font-size: 1em;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .options button:hover {
+            background-color: #0056b3;
+        }
+        #timer {
+            font-size: 1.5em;
+            color: #d9534f;
+            margin-bottom: 20px;
+        }
+        #question-timer {
+            font-size: 1.2em;
+            color: #d9534f;
+            margin-bottom: 10px;
+        }
+        #score {
+            font-size: 1.5em;
+            color: #28a745;
+        }
+        #romaji {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 10px;
+        }
+        #top-scores {
+            margin-top: 20px;
+            text-align: left;
+        }
+        #start-screen {
+            font-size: 1.5em;
+            color: #333;
+        }
+        #end-screen {
+            margin-top: 20px;
+        }
+        #end-screen button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #end-screen button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>Idioma Express: Desafío Multilingüe</h1>
+    <div id="game-container">
+        <div id="start-screen">¿Preparados?</div>
+        <div id="timer" style="display: none;">Tiempo restante: 120 segundos</div>
+        <div id="question-timer" style="display: none;">Tiempo para responder: 10 segundos</div>
+        <div id="question" style="display: none;"></div>
+        <div class="options" id="options" style="display: none;"></div>
+        <div id="romaji" style="display: none;"></div>
+        <div id="score" style="display: none;">Puntos: 0</div>
+        <div id="end-screen" style="display: none;">
+            <div id="performance-message"></div>
+            <button id="retry-btn">Reintentar</button>
+            <button id="save-score-btn">Guardar puntuación</button>
+            <button id="reset-top-btn">Reiniciar TOP</button>
+        </div>
+        <div id="top-scores">
+            <h2>TOP Puntuaciones</h2>
+            <ul id="scores-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        const allQuestions = [
+            // Preguntas sencillas (50)
+            { question: "¿Cómo se dice 'gracias' en japonés?", options: ["ありがとう", "こんにちは", "さようなら", "おはよう"], answer: "ありがとう", romaji: "Arigatou" },
+            { question: "¿Cómo se dice 'adiós' en inglés?", options: ["hello", "goodbye", "thank you", "please"], answer: "goodbye" },
+            { question: "¿Cómo se dice 'comer' en francés?", options: ["boire", "manger", "dormir", "parler"], answer: "manger" },
+            { question: "¿Cómo se dice 'feliz' en italiano?", options: ["triste", "felice", "arrabbiato", "contento"], answer: "felice" },
+            { question: "¿Cómo se dice 'agua' en japonés?", options: ["みず", "おちゃ", "こめ", "さけ"], answer: "みず", romaji: "Mizu" },
+            { question: "¿Cómo se dice 'hola' en inglés?", options: ["hello", "goodbye", "thank you", "please"], answer: "hello" },
+            { question: "¿Cómo se dice 'gato' en japonés?", options: ["いぬ", "ねこ", "とり", "さかな"], answer: "ねこ", romaji: "Neko" },
+            { question: "¿Cómo se dice 'perro' en inglés?", options: ["cat", "dog", "bird", "fish"], answer: "dog" },
+            { question: "¿Cómo se dice 'mañana' en japonés?", options: ["あした", "きのう", "こんばん", "いま"], answer: "あした", romaji: "Ashita" },
+            { question: "¿Cómo se dice 'si' en inglés?", options: ["yes", "no", "maybe", "please"], answer: "yes" },
+            { question: "¿Cómo se dice 'ir' en japonés?", options: ["いく", "たべる", "のむ", "かう"], answer: "いく", romaji: "Iku" },
+            { question: "¿Cómo se dice 'ir' en inglés?", options: ["go", "come", "stay", "run"], answer: "go" },
+            { question: "¿Cómo se dice 'comprar' en japonés?", options: ["かう", "たべる", "のむ", "いく"], answer: "かう", romaji: "Kau" },
+            { question: "¿Cómo se dice 'comprar' en inglés?", options: ["buy", "sell", "trade", "rent"], answer: "buy" },
+            { question: "¿Cómo se dice 'ver' en japonés?", options: ["みる", "きく", "かう", "いく"], answer: "みる", romaji: "Miru" },
+            { question: "¿Cómo se dice 'ver' en inglés?", options: ["see", "hear", "buy", "go"], answer: "see" },
+            { question: "¿Cómo se dice 'escuchar' en japonés?", options: ["みる", "きく", "かう", "いく"], answer: "きく", romaji: "Kiku" },
+            { question: "¿Cómo se dice 'escuchar' en inglés?", options: ["see", "hear", "buy", "go"], answer: "hear" },
+            { question: "¿Cómo se dice 'saludar' en japonés?", options: ["さようなら", "ありがとう", "こんにちは", "おやすみなさい"], answer: "こんにちは", romaji: "Konnichiwa" },
+            { question: "¿Cómo se dice 'bienvenido' en italiano?", options: ["arrivederci", "benvenuto", "grazie", "prego"], answer: "benvenuto" },
+            { question: "¿Cómo se dice 'amor' en italiano?", options: ["odio", "amore", "pace", "gioia"], answer: "amore" },
+            { question: "¿Cómo se dice 'casa' en italiano?", options: ["cane", "casa", "albero", "fiore"], answer: "casa" },
+            { question: "¿Cómo se dice 'árbol' en italiano?", options: ["cane", "casa", "albero", "fiore"], answer: "albero" },
+            { question: "¿Cómo se dice 'flor' en italiano?", options: ["cane", "casa", "albero", "fiore"], answer: "fiore" },
+            { question: "¿Cómo se dice 'paz' en italiano?", options: ["odio", "amore", "pace", "gioia"], answer: "pace" },
+            { question: "¿Cómo se dice 'alegría' en italiano?", options: ["odio", "amore", "pace", "gioia"], answer: "gioia" },
+            { question: "¿Cómo se dice 'adiós' en italiano?", options: ["arrivederci", "benvenuto", "grazie", "prego"], answer: "arrivederci" },
+            { question: "¿Cómo se dice 'beber' en japonés?", options: ["たべる", "のむ", "かう", "いく"], answer: "のむ", romaji: "Nomu" },
+            { question: "¿Cómo se dice 'beber' en inglés?", options: ["eat", "drink", "buy", "go"], answer: "drink" },
+            { question: "¿Cómo se dice 'comer' en japonés?", options: ["たべる", "のむ", "かう", "いく"], answer: "たべる", romaji: "Taberu" },
+            { question: "¿Cómo se dice 'comer' en inglés?", options: ["eat", "drink", "buy", "go"], answer: "eat" },
+            { question: "¿Cómo se dice 'cantar' en francés?", options: ["chanter", "danser", "jouer", "écouter"], answer: "chanter" },
+            { question: "¿Cómo se dice 'bailar' en francés?", options: ["chanter", "danser", "jouer", "écouter"], answer: "danser" },
+            { question: "¿Cómo se dice 'jugar' en francés?", options: ["chanter", "danser", "jouer", "écouter"], answer: "jouer" },
+            { question: "¿Cómo se dice 'leer' en francés?", options: ["lire", "écrire", "parler", "écouter"], answer: "lire" },
+            { question: "¿Cómo se dice 'escribir' en francés?", options: ["lire", "écrire", "parler", "écouter"], answer: "écrire" },
+            { question: "¿Cómo se dice 'hablar' en francés?", options: ["dormir", "manger", "boire", "parler"], answer: "parler" },
+            { question: "¿Cómo se dice 'dormir' en francés?", options: ["dormir", "manger", "boire", "parler"], answer: "dormir" },
+            { question: "¿Cómo se dice 'escuchar' en francés?", options: ["lire", "écrire", "parler", "écouter"], answer: "écouter" },
+
+            // Preguntas intermedias (50)
+            { question: "¿Cómo se dice 'hermano mayor' en japonés?", options: ["お兄さん", "お姉さん", "弟", "妹"], answer: "お兄さん", romaji: "Onii-san" },
+            { question: "¿Cómo se dice 'hermana mayor' en japonés?", options: ["お兄さん", "お姉さん", "弟", "妹"], answer: "お姉さん", romaji: "Onee-san" },
+            { question: "¿Cómo se dice 'hermano menor' en japonés?", options: ["お兄さん", "お姉さん", "弟", "妹"], answer: "弟", romaji: "Otouto" },
+            { question: "¿Cómo se dice 'hermana menor' en japonés?", options: ["お兄さん", "お姉さん", "弟", "妹"], answer: "妹", romaji: "Imouto" },
+            { question: "¿Cómo se dice 'mañana temprano' en japonés?", options: ["あさ", "よる", "ひる", "あけ"], answer: "あさ", romaji: "Asa" },
+            { question: "¿Cómo se dice 'ayer' en japonés?", options: ["あした", "きのう", "こんばん", "いま"], answer: "きのう", romaji: "Kinou" },
+            { question: "¿Cómo se dice 'tarde' en japonés?", options: ["あさ", "よる", "ひる", "あけ"], answer: "ひる", romaji: "Hiru" },
+            { question: "¿Cómo se dice 'noche' en japonés?", options: ["あさ", "よる", "ひる", "あけ"], answer: "よる", romaji: "Yoru" },
+            { question: "¿Cómo se dice 'estrella' en japonés?", options: ["つき", "ほし", "そら", "たいよう"], answer: "ほし", romaji: "Hoshi" },
+            { question: "¿Cómo se dice 'sol' en japonés?", options: ["つき", "ほし", "そら", "たいよう"], answer: "たいよう", romaji: "Taiyou" },
+            { question: "¿Cómo se dice 'luna' en japonés?", options: ["つき", "ほし", "そら", "たいよう"], answer: "つき", romaji: "Tsuki" },
+            { question: "¿Cómo se dice 'cielo' en japonés?", options: ["つき", "ほし", "そら", "たいよう"], answer: "そら", romaji: "Sora" },
+            { question: "¿Cómo se dice 'montaña' en japonés?", options: ["やま", "うみ", "もり", "たに"], answer: "やま", romaji: "Yama" },
+            { question: "¿Cómo se dice 'mar' en japonés?", options: ["やま", "うみ", "もり", "たに"], answer: "うみ", romaji: "Umi" },
+            { question: "¿Cómo se dice 'bosque' en japonés?", options: ["やま", "うみ", "もり", "たに"], answer: "もり", romaji: "Mori" },
+            { question: "¿Cómo se dice 'valle' en japonés?", options: ["やま", "うみ", "もり", "たに"], answer: "たに", romaji: "Tani" },
+            { question: "¿Cómo se dice 'primavera' en japonés?", options: ["はる", "なつ", "あき", "ふゆ"], answer: "はる", romaji: "Haru" },
+            { question: "¿Cómo se dice 'verano' en japonés?", options: ["はる", "なつ", "あき", "ふゆ"], answer: "なつ", romaji: "Natsu" },
+            { question: "¿Cómo se dice 'otoño' en japonés?", options: ["はる", "なつ", "あき", "ふゆ"], answer: "あき", romaji: "Aki" },
+            { question: "¿Cómo se dice 'invierno' en japonés?", options: ["はる", "なつ", "あき", "ふゆ"], answer: "ふゆ", romaji: "Fuyu" },
+            { question: "¿Cómo se dice 'tristeza' en italiano?", options: ["felice", "triste", "gioia", "pace"], answer: "triste" },
+            { question: "¿Cómo se dice 'enojo' en italiano?", options: ["felice", "triste", "arrabbiato", "pace"], answer: "arrabbiato" },
+            { question: "¿Cómo se dice 'sorpresa' en italiano?", options: ["felice", "triste", "sorpresa", "pace"], answer: "sorpresa" },
+            { question: "¿Cómo se dice 'esperanza' en italiano?", options: ["felice", "triste", "speranza", "pace"], answer: "speranza" },
+            { question: "¿Cómo se dice 'correr rápido' en inglés?", options: ["run fast", "walk slow", "jump high", "swim deep"], answer: "run fast" },
+            { question: "¿Cómo se dice 'saltar alto' en inglés?", options: ["run fast", "walk slow", "jump high", "swim deep"], answer: "jump high" },
+            { question: "¿Cómo se dice 'nadar profundo' en inglés?", options: ["run fast", "walk slow", "jump high", "swim deep"], answer: "swim deep" },
+            { question: "¿Cómo se dice 'caminar lento' en inglés?", options: ["run fast", "walk slow", "jump high", "swim deep"], answer: "walk slow" },
+            { question: "¿Cómo se dice 'comida deliciosa' en francés?", options: ["nourriture délicieuse", "boisson froide", "musique douce", "livre intéressant"], answer: "nourriture délicieuse" },
+            { question: "¿Cómo se dice 'bebida fría' en francés?", options: ["nourriture délicieuse", "boisson froide", "musique douce", "livre intéressant"], answer: "boisson froide" },
+            { question: "¿Cómo se dice 'música suave' en francés?", options: ["nourriture délicieuse", "boisson froide", "musique douce", "livre intéressant"], answer: "musique douce" },
+            { question: "¿Cómo se dice 'libro interesante' en francés?", options: ["nourriture délicieuse", "boisson froide", "musique douce", "livre intéressant"], answer: "livre intéressant" }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timeLeft = 120;
+        let timer;
+        let questionTimer;
+        let questionTimeLeft = 10;
+
+        const startScreen = document.getElementById("start-screen");
+        const gameContainer = document.getElementById("game-container");
+        const questionElement = document.getElementById("question");
+        const optionsElement = document.getElementById("options");
+        const romajiElement = document.getElementById("romaji");
+        const scoreElement = document.getElementById("score");
+        const timerElement = document.getElementById("timer");
+        const questionTimerElement = document.getElementById("question-timer");
+        const endScreen = document.getElementById("end-screen");
+        const performanceMessage = document.getElementById("performance-message");
+        const retryBtn = document.getElementById("retry-btn");
+        const saveScoreBtn = document.getElementById("save-score-btn");
+        const resetTopBtn = document.getElementById("reset-top-btn");
+        const scoresList = document.getElementById("scores-list");
+
+        let topScores = JSON.parse(localStorage.getItem("topScores")) || [];
+
+        function updateTopScores() {
+            scoresList.innerHTML = "";
+            topScores.forEach((score, index) => {
+                const li = document.createElement("li");
+                li.textContent = `${index + 1}. ${score} puntos`;
+                scoresList.appendChild(li);
+            });
+        }
+
+        function showStartMessages() {
+            const messages = ["¿Preparados?", "¿Listos!", "¡Vamos!"];
+            let index = 0;
+
+            const interval = setInterval(() => {
+                startScreen.textContent = messages[index];
+                index++;
+
+                if (index >= messages.length) {
+                    clearInterval(interval);
+                    startCountdown();
+                }
+            }, 1500); // Cambiar mensaje cada 1.5 segundos
+        }
+
+        function startCountdown() {
+            let countdown = 5;
+            startScreen.textContent = `El juego comenzará en ${countdown}...`;
+
+            const interval = setInterval(() => {
+                countdown--;
+                startScreen.textContent = `El juego comenzará en ${countdown}...`;
+
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    startGame();
+                }
+            }, 1000);
+        }
+
+        function startGame() {
+            startScreen.style.display = "none";
+            timerElement.style.display = "block";
+            questionTimerElement.style.display = "block";
+            questionElement.style.display = "block";
+            optionsElement.style.display = "block";
+            romajiElement.style.display = "block";
+            scoreElement.style.display = "block";
+
+            currentQuestionIndex = 0;
+            score = 0;
+            timeLeft = 120;
+            scoreElement.textContent = `Puntos: ${score}`;
+            loadQuestion();
+            startTimer();
+        }
+
+        function loadQuestion() {
+            clearTimeout(questionTimer); // Limpiar el temporizador de la pregunta anterior
+            questionTimeLeft = 10; // Reiniciar el tiempo para responder
+            questionTimerElement.textContent = `Tiempo para responder: ${questionTimeLeft} segundos`;
+
+            if (currentQuestionIndex < questions.length && timeLeft > 0) {
+                const currentQuestion = questions[currentQuestionIndex];
+                questionElement.textContent = currentQuestion.question;
+                optionsElement.innerHTML = "";
+                romajiElement.textContent = currentQuestion.romaji ? `Romaji: ${currentQuestion.romaji}` : "";
+
+                currentQuestion.options.forEach(option => {
+                    const button = document.createElement("button");
+                    button.textContent = option;
+                    button.addEventListener("click", () => checkAnswer(option));
+                    optionsElement.appendChild(button);
+                });
+
+                // Temporizador para pasar a la siguiente pregunta después de 10 segundos
+                questionTimer = setInterval(() => {
+                    questionTimeLeft--;
+                    questionTimerElement.textContent = `Tiempo para responder: ${questionTimeLeft} segundos`;
+
+                    if (questionTimeLeft <= 0) {
+                        clearInterval(questionTimer);
+                        currentQuestionIndex++;
+                        loadQuestion();
+                    }
+                }, 1000);
+            } else {
+                endGame();
+            }
+        }
+
+        function checkAnswer(selectedOption) {
+            clearInterval(questionTimer); // Detener el temporizador de la pregunta actual
+            const correctAnswer = questions[currentQuestionIndex].answer;
+
+            if (selectedOption === correctAnswer) {
+                score++;
+                scoreElement.textContent = `Puntos: ${score}`;
+            }
+
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        function startTimer() {
+            timer = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = `Tiempo restante: ${timeLeft} segundos`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(timer);
+            clearInterval(questionTimer); // Asegurarse de que no haya un temporizador activo
+            questionElement.style.display = "none";
+            optionsElement.style.display = "none";
+            romajiElement.style.display = "none";
+            timerElement.style.display = "none";
+            questionTimerElement.style.display = "none";
+            endScreen.style.display = "block";
+
+            const performanceMessages = [
+                "¡Excelente trabajo! 🎉",
+                "¡Bien hecho! 💪",
+                "¡No está mal! 😊",
+                "¡Puedes mejorar! 😅",
+                "¡Sigue practicando! 💡"
+            ];
+            let messageIndex = Math.min(Math.floor(score / 20), performanceMessages.length - 1);
+            performanceMessage.textContent = performanceMessages[messageIndex];
+
+            retryBtn.onclick = () => {
+                endScreen.style.display = "none";
+                startScreen.style.display = "block";
+                showStartMessages();
+            };
+
+            saveScoreBtn.onclick = () => {
+                topScores.push(score);
+                topScores.sort((a, b) => b - a); // Ordenar de mayor a menor
+                localStorage.setItem("topScores", JSON.stringify(topScores));
+                updateTopScores();
+            };
+
+            resetTopBtn.onclick = () => {
+                topScores = [];
+                localStorage.removeItem("topScores");
+                updateTopScores();
+            };
+
+            updateTopScores();
+        }
+
+        // Seleccionar 100 preguntas aleatorias
+        const questions = [];
+        while (questions.length < 100 && questions.length < allQuestions.length) {
+            const randomIndex = Math.floor(Math.random() * allQuestions.length);
+            if (!questions.includes(allQuestions[randomIndex])) {
+                questions.push(allQuestions[randomIndex]);
+            }
+        }
+
+        showStartMessages();
+        updateTopScores();
+    </script>
+</body>
+</html>
